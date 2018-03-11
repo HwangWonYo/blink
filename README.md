@@ -4,7 +4,8 @@
 ## Blink
 > Args:
 >   - pin: pin port connected to LED
-> functions:
+>
+> Functions:
 >   - on : turn on LED
 >   - off: turn off LED
 
@@ -12,7 +13,7 @@
 
 #### on
 - turn on LED
-- recive integer parameter for delay time
+- recieve integer parameter for delay time
 - example
   ```cpp
   blink.on(500);
@@ -22,10 +23,13 @@
 
 #### off
 - turn off LED
-- recevie integer parameter for delay time
+- recieve integer parameter for delay time
 - example
   ```cpp
-  blink.off(300);
-  // delay 300ms.
-  // means light off for 300ms.
+    blink.off(300);
+    // delay 300ms.
+    // means light off for 300ms.
   ```
+
+### NOTICE
+- Temporarily Blink class uses built in LED. ([See Issue](https://github.com/HwangWonYo/blink/issues/1))

@@ -15,18 +15,17 @@
 #define ONE_WIRE_BUS D4
 
 ESP8266WiFiMulti wifiMulti;
-const char* host = "api.thingspeak.com"; // Your domain  
-String ApiKey = SECRET_API_KEY;
-//const char* WIFI_HOST1 = HOST1;
-//const char* WIFI_HOST2 = HOST2;
-//const char* WIFI_SECRET_1 = SECRET_KEY_1;
-//const char* WIFI_SECRET_2 = SECRET_KEY_2;
-String Hosts[] = HOSTS;
-String Secrets[] = SECRETS;
+//const char* host = "api.thingspeak.com"; // Your domain  
+const String line_host ="maker.ifttt.com";
+//String ApiKey = SECRET_API_KEY;
+String ApiKey = LINE_SECRET_KEY;
+const char* WIFI_HOST1 = HOST1;
+const char* WIFI_HOST2 = HOST2;
+const char* WIFI_SECRET_1 = SECRET_KEY_1;
+const char* WIFI_SECRET_2 = SECRET_KEY_2;
 
-
-String path = "/update?key=" + ApiKey + "&field1=";  
-
+//String path = "/update?key=" + ApiKey + "&field1=";  
+String path = "/trigger/hot_temp/with/key/" + ApiKey;
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature DS18B20(&oneWire);
@@ -34,13 +33,8 @@ DallasTemperature DS18B20(&oneWire);
 char temperatureString[6];
 
 void WIFI_Connect(){
-//  wifiMulti.addAP("AndroidHotspot9899", "sss44477");
-//  wifiMulti.addAP("SWAN", "swanlim3288");
-//  wifiMulti.addAP(WIFI_HOST1, WIFI_SECRET_1);
-//  wifiMulti.addAP(WIFI_HOST2, WIFI_SECRET_2);
-  for(int i = 0; i < Hosts.size(); i++){
-    wifiMulti.addAP(Hosts[i], Secrets[i]);
-  }
+  wifiMulti.addAP(WIFI_HOST1, WIFI_SECRET_1);
+  wifiMulti.addAP(WIFI_HOST2, WIFI_SECRET_2);
 
 
   Serial.println("Connecting ...");
@@ -74,22 +68,52 @@ float getTemperature() {
   } while (temp == 85.0 || temp == (-127.0));
   return temp;
 }
+//
+//void sendDataToThinkSpeak(float temperature){
+//  dtostrf(temperature, 2, 2, temperatureString);
+//  // send temperature to the serial console
+//  Serial.println(temperatureString);
+//
+//  WiFiClient client;
+//  const int httpPort = 80;
+//  if (!client.connect(host, httpPort)) {
+//    Serial.println("connection failed");
+//    return;
+//  }
+//
+//  client.print(String("GET ") + path + temperatureString + " HTTP/1.1\r\n" +
+//               "Host: " + host + "\r\n" + 
+//               "Connection: keep-alive\r\n\r\n");
+//}
 
-void sendDataToThinkSpeak(float temperature){
+void sendDataToIFTTT(float temperature){
   dtostrf(temperature, 2, 2, temperatureString);
   // send temperature to the serial console
   Serial.println(temperatureString);
-
+  String content = "{\"value1\":\"" + String(temperatureString) + "\"}";
   WiFiClient client;
-  const int httpPort = 80;
-  if (!client.connect(host, httpPort)) {
-    Serial.println("connection failed");
-    return;
-  }
+  if (client.connect(line_host, 80)) {
+    Serial.println("Connected to server");
+    client.print(String("GET ") + path + "?value1=" + temperatureString + " HTTP/1.1\r\n" +
+             "Host: " + line_host + "\r\n" + 
+             "Connection: close\r\n\r\n");
 
-  client.print(String("GET ") + path + temperatureString + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
-               "Connection: keep-alive\r\n\r\n");
+    Serial.println("Request: ");
+    Serial.println(String("GET ") + path + "?value1=" + temperatureString + " HTTP/1.1\r\n" +
+             "Host: " + line_host + "\r\n" + 
+             "Connection: close\r\n\r\n");             
+ 
+    Serial.println("Server Response:");
+    uint32_t lastRead = millis();
+    while (millis() - lastRead < 2000){
+      while (client.available()){
+        Serial.write(client.read());
+        lastRead = millis();
+      }
+    }
+  }else{
+    Serial.println("connection failed");
+  }
 }
 
 
@@ -99,7 +123,8 @@ void loop() {
     {
       WIFI_Connect();
     } else {
-      sendDataToThinkSpeak(temperature);
-      delay(60000);
+//      sendDataToThinkSpeak(temperature);
+      sendDataToIFTTT(temperature);
+      delay(5000);
     }
 }
